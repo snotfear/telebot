@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from PIL import Image
 from io import BytesIO
-
+from torch.optim import lr_scheduler
 
 import torchvision.transforms as transforms
 import torchvision.models as models
@@ -18,7 +18,7 @@ bot = telebot.TeleBot(token)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 pool_images = dict()
 
-imsize = 512 if torch.cuda.is_available() else 128  # use small size if no gpu
+imsize = 512 #if torch.cuda.is_available() else 128  # use small size if no gpu
 
 resizer = transforms.Resize(imsize)
 loader = transforms.ToTensor() # transform it into a torch tensor
@@ -167,6 +167,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
     input_img.requires_grad_(True)
     model.requires_grad_(False)
     optimizer = get_input_optimizer(input_img)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
     print('Optimizing..')
     run = [0]
     while run[0] <= num_steps:
@@ -195,6 +196,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 
             return style_score + content_score
         optimizer.step(closure)
+        exp_lr_scheduler.step()
     # a last correction...
     with torch.no_grad():
         input_img.clamp_(0, 1)
@@ -275,7 +277,7 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             return None
         else: # Если, первая фотография с контентом была уже получена, то добавим фото_стиль и выполним работу
             pool_images[message_chat_id].append(photo_id)
-            bot.send_message(message_chat_id, "Я получил пример стиля, теперь осталось немножко подожать =)")
+            bot.send_message(message_chat_id, "Я получил пример стиля, теперь осталось немножко подожать =) Обычно это занимает не больше 20 минут")
             content_img_bytes = download_images(chat_id=message_chat_id, ind=0) # Скачаем изображения
             style_img_bytes = download_images(chat_id=message_chat_id, ind=1)
 
