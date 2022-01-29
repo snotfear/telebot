@@ -1,4 +1,5 @@
-﻿anyio==3.3.4
+pyTelegramBotAPI
+anyio==3.3.4
 argon2-cffi==21.1.0
 attrs==21.2.0
 Babel==2.9.1
