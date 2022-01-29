@@ -18,7 +18,7 @@ bot = telebot.TeleBot(token)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 pool_images = dict()
 
-imsize = 512 #if torch.cuda.is_available() else 128  # use small size if no gpu
+imsize = 256 #if torch.cuda.is_available() else 128  # use small size if no gpu
 
 resizer = transforms.Resize(imsize)
 loader = transforms.ToTensor() # transform it into a torch tensor
@@ -35,7 +35,6 @@ def bytes_to_pil(img): #Переведём картинку из типа bytes 
     image = resizer(image)
     size = [i for i in image.size]
     return image, size
-
 
 def image_loader(image_name): #Приведем PIL картинку к тензору
     image = image_name
