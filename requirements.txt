@@ -1,0 +1,6 @@
+telebot
+numpy
+torch
+torchvision
+PIL
+io
