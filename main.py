@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import gc
 import telebot
 import torch
 import torch.nn as nn
@@ -276,7 +277,7 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             return None
         else: # Если, первая фотография с контентом была уже получена, то добавим фото_стиль и выполним работу
             pool_images[message_chat_id].append(photo_id)
-            bot.send_message(message_chat_id, "Я получил пример стиля, теперь осталось немножко подожать =) Обычно это занимает не больше 20 минут")
+            bot.send_message(message_chat_id, "Я получил пример стиля, теперь осталось немножко подожать =) Обычно это занимает не больше 15 минут")
             content_img_bytes = download_images(chat_id=message_chat_id, ind=0) # Скачаем изображения
             style_img_bytes = download_images(chat_id=message_chat_id, ind=1)
 
@@ -294,7 +295,6 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
                                         cont_img, st_img, input_img, num_steps=300)
             return output
-            ######## И вот тут будет функция скачивания двух этих картинок, затем работа сети
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
         return None
@@ -319,6 +319,8 @@ def get_image_message(message):
         outp = save_image_tensor2pillow(outp, 'out_image.jpg')
         bot.send_message(message.chat.id, "А вот и результат!")
         bot.send_photo(message.chat.id, outp)
+        gc.collect()
+
 
     if len(pool_images[message.chat.id]) == 1:
         bot.send_message(message.chat.id, "Отлично, изображение с контентом получено, теперь жду изображение со стилем")
