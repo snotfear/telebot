@@ -33,6 +33,7 @@ def bytes_to_pil(img): #Переведём картинку из типа bytes 
     stream = BytesIO(img)
     image = Image.open(stream).convert("RGB")
     stream.close()
+    del stream
     image = resizer(image)
     size = [i for i in image.size]
     return image, size
@@ -200,6 +201,8 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
     # a last correction...
     with torch.no_grad():
         input_img.clamp_(0, 1)
+        del content_img
+        del style_img
     return input_img
 
 def save_image_tensor2pillow(input_tensor: torch.Tensor, filename):
@@ -209,12 +212,15 @@ def save_image_tensor2pillow(input_tensor: torch.Tensor, filename):
     input_tensor = input_tensor.squeeze()
     input_tensor = input_tensor.mul_(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).type(torch.uint8).numpy()
     im = Image.fromarray(input_tensor)
+    del input_tensor
     # im.save(filename) # Если потребуется сохранить на диск - раскомментировать
     return im
 
 def compare_two_pics(cont_pic, style_pic):
     image_cont, size_cont = cont_pic
     image_style, size_style = style_pic # Вытащили размеры и картинки
+    del cont_pic
+    del style_pic
     smaller_side = np.argmin(size_style)  # Получили индекс наименьшей стороны изображения (по ней и будем равнять)
     ratio_c = (size_cont[1] / size_cont[0]) # Посчитали соотношение сторон
     ratio_s = (size_style[1] / size_style[0])
@@ -294,6 +300,9 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
                                         cont_img, st_img, input_img, num_steps=300)
+            del cont_img
+            del st_img
+            del input_img
             return output
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
@@ -319,6 +328,7 @@ def get_image_message(message):
         outp = save_image_tensor2pillow(outp, 'out_image.jpg')
         bot.send_message(message.chat.id, "А вот и результат!")
         bot.send_photo(message.chat.id, outp)
+
         gc.collect()
 
 
