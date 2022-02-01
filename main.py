@@ -27,17 +27,14 @@ loader = transforms.ToTensor() # transform it into a torch tensor
 def download_images(chat_id, ind): # Скачаем полученную нами картинку
     file_info = bot.get_file(pool_images[chat_id][ind])
     downloaded_file = bot.download_file(file_info.file_path)
-    gc.collect()
     return downloaded_file
 
 def bytes_to_pil(img): #Переведём картинку из типа bytes в PIL, съедобный для PyTorch
     stream = BytesIO(img)
     image = Image.open(stream).convert("RGB")
     stream.close()
-    del stream
     image = resizer(image)
     size = [i for i in image.size]
-    gc.collect()
     return image, size
 
 def image_loader(image_name): #Приведем PIL картинку к тензору
@@ -227,6 +224,7 @@ def compare_two_pics(cont_pic, style_pic):
     image_style, size_style = style_pic # Вытащили размеры и картинки
     del cont_pic
     del style_pic
+    del image_cont
     smaller_side = np.argmin(size_style)  # Получили индекс наименьшей стороны изображения (по ней и будем равнять)
     ratio_c = (size_cont[1] / size_cont[0]) # Посчитали соотношение сторон
     ratio_s = (size_style[1] / size_style[0])
@@ -307,6 +305,13 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
                                         cont_img, st_img, input_img, num_steps=300)
+
+            del content_img_bytes
+            del style_img_bytes
+            del new_st_PIL
+            del new_cont_PIL
+            del cont_PIL
+            del style_PIL
             del cont_img
             del st_img
             del input_img
