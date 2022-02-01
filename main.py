@@ -328,7 +328,7 @@ def get_image_message(message):
         outp = save_image_tensor2pillow(outp, 'out_image.jpg')
         bot.send_message(message.chat.id, "А вот и результат!")
         bot.send_photo(message.chat.id, outp)
-
+        torch.cuda.empty_cache()
         gc.collect()
 
 
