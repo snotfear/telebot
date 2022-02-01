@@ -40,7 +40,6 @@ def bytes_to_pil(img): #Переведём картинку из типа bytes 
 def image_loader(image_name): #Приведем PIL картинку к тензору
     image = image_name
     image = loader(image).unsqueeze(0)
-    gc.collect()
     return image.to(device, torch.float)
 
 class ContentLoss(nn.Module):
@@ -198,13 +197,9 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
             return style_score + content_score
         optimizer.step(closure)
         exp_lr_scheduler.step()
-        gc.collect()
     # a last correction...
     with torch.no_grad():
         input_img.clamp_(0, 1)
-        del content_img
-        del style_img
-    gc.collect()
     return input_img
 
 def save_image_tensor2pillow(input_tensor: torch.Tensor, filename):
@@ -214,17 +209,12 @@ def save_image_tensor2pillow(input_tensor: torch.Tensor, filename):
     input_tensor = input_tensor.squeeze()
     input_tensor = input_tensor.mul_(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).type(torch.uint8).numpy()
     im = Image.fromarray(input_tensor)
-    del input_tensor
-    gc.collect()
     # im.save(filename) # Если потребуется сохранить на диск - раскомментировать
     return im
 
 def compare_two_pics(cont_pic, style_pic):
     image_cont, size_cont = cont_pic
     image_style, size_style = style_pic # Вытащили размеры и картинки
-    del cont_pic
-    del style_pic
-    del image_cont
     smaller_side = np.argmin(size_style)  # Получили индекс наименьшей стороны изображения (по ней и будем равнять)
     ratio_c = (size_cont[1] / size_cont[0]) # Посчитали соотношение сторон
     ratio_s = (size_style[1] / size_style[0])
@@ -276,7 +266,6 @@ def compare_two_pics(cont_pic, style_pic):
 
     image_style = image_crop(image_style)
     image_style = image_resize(image_style)
-    gc.collect()
     return image_style
 
 def get_image(message_chat_id, photo_id): # Работа с полученными изображениями
@@ -305,16 +294,6 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
                                         cont_img, st_img, input_img, num_steps=300)
-
-            del content_img_bytes
-            del style_img_bytes
-            del new_st_PIL
-            del new_cont_PIL
-            del cont_PIL
-            del style_PIL
-            del cont_img
-            del st_img
-            del input_img
             return output
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
@@ -340,8 +319,7 @@ def get_image_message(message):
         outp = save_image_tensor2pillow(outp, 'out_image.jpg')
         bot.send_message(message.chat.id, "А вот и результат!")
         bot.send_photo(message.chat.id, outp)
-        torch.cuda.empty_cache()
-        gc.collect()
+
 
     if len(pool_images[message.chat.id]) == 1:
         bot.send_message(message.chat.id, "Отлично, изображение с контентом получено, теперь жду изображение со стилем")
