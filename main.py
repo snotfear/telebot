@@ -269,7 +269,7 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             st_img = image_loader(new_st_PIL)
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
-                                        cont_img, st_img, input_img, num_steps=60)
+                                        cont_img, st_img, input_img, num_steps=59)
             del cont_PIL
             del style_PIL
             del new_st_PIL
