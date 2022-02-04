@@ -153,6 +153,7 @@ def get_style_model_and_losses(cnn, normalization_mean, normalization_std,
 def get_input_optimizer(input_img):
     # this line to show that input is a parameter that requires a gradient
     optimizer = optim.LBFGS([input_img])
+    gc.collect()
     return optimizer
 
 def run_style_transfer(cnn, normalization_mean, normalization_std,
@@ -194,6 +195,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
                 print()
             return style_score + content_score
         optimizer.step(closure)
+        gc.collect()
     # a last correction...
     with torch.no_grad():
         input_img.clamp_(0, 1)
@@ -217,40 +219,19 @@ def compare_two_pics(cont_pic, style_pic):
     ratio_s = (size_style[1] / size_style[0])
 
     if ratio_s == 1: # Если соотношение сторон стиля - квадрат, напрямую меняем размеры
-        # print(ratio_s, '-ratio_s', ratio_c,'-ratio_c')
         if ratio_c<ratio_s:
             size_style[1] = round(size_style[0] * ratio_c)
-            # print(size_style)
         else:
             size_style[0] = round(size_style[1] / ratio_c)
-            # print(size_style)
-    elif ratio_s < 1 and ratio_c < 1 and ratio_c < ratio_s: # превышение контента по любой из стороно, при одинаковой ориентации
-        # print(ratio_c, 'Контент')
-        # print(ratio_s, 'стиль')
-        # print(size_style, ratio_c - ratio_s, '-Контент-Стиль')
+    elif ratio_s < 1 and ratio_c < 1 and ratio_c < ratio_s: # превышение контента по любой из сторон, при одинаковой ориентации
         size_style[1] = round(size_style[1] * ratio_c)
-        # print(size_style, ratio_c - ratio_s, '-Контент-Стиль')
     elif ratio_s > 1 and ratio_c > 1 and ratio_c > ratio_s:
-        # print(ratio_c, 'Контент')
-        # print(ratio_s, 'стиль')
-        # print(size_style, ratio_c - ratio_s, '-Контент-Стиль')
         size_style[0] = round(size_style[0] / ratio_c)
-        # print(size_style, ratio_c - ratio_s, '-Контент-Стиль')
     elif ratio_c < ratio_s: # Если пропорции отличны от квадрата, то сравниваем их и получаем значения бОльшей стороны
-        # print(ratio_c, 'Контент')
-        # print(ratio_s, 'стиль')
-        # print(size_style, ratio_c - ratio_s, '-Контент-Стиль')
         biggest_side = round(size_style[smaller_side] * ratio_c)
-        # print(size_style[smaller_side])
-        # print(biggest_side)
         size_style[np.argmax(size_style)] = biggest_side # Меняем бОльшую исходную сторону на полученную
     elif ratio_c > ratio_s:
-        # print(ratio_c, 'Контент')
-        # print(ratio_s, 'стиль')
-        # print(size_style, ratio_c - ratio_s, '-Контент-Стиль')
         biggest_side = round(size_style[smaller_side] / ratio_c)
-        # print(size_style[smaller_side])
-        # print(biggest_side)
         size_style[np.argmax(size_style)] = biggest_side
         # Если пропроции одинаковы, то ничего не меняем
     if ratio_c <= 1:
@@ -286,11 +267,15 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
 
             cont_img = image_loader(new_cont_PIL)
             st_img = image_loader(new_st_PIL)
-            # print(cont_img.shape)
-            # print(st_img.shape)
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
                                         cont_img, st_img, input_img, num_steps=60)
+            del cont_PIL
+            del style_PIL
+            del new_st_PIL
+            del new_cont_PIL
+            del cont_img
+            del st_img
             return output
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
@@ -316,8 +301,7 @@ def get_image_message(message):
         outp = save_image_tensor2pillow(outp, 'out_image.jpg')
         bot.send_message(message.chat.id, "А вот и результат!")
         bot.send_photo(message.chat.id, outp)
-
-
+        gc.collect()
     if len(pool_images[message.chat.id]) == 1:
         bot.send_message(message.chat.id, "Отлично, изображение с контентом получено, теперь жду изображение со стилем")
 
