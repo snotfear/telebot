@@ -156,7 +156,7 @@ def get_input_optimizer(input_img):
     return optimizer
 
 def run_style_transfer(cnn, normalization_mean, normalization_std,
-                       content_img, style_img, input_img, num_steps=60,
+                       content_img, style_img, input_img, num_steps=300,
                        style_weight=1000000, content_weight=1):
     """Run the style transfer."""
     print('Building the style transfer model..')
@@ -167,7 +167,6 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
     input_img.requires_grad_(True)
     model.requires_grad_(False)
     optimizer = get_input_optimizer(input_img)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
     print('Optimizing..')
     run = [0]
     while run[0] <= num_steps:
@@ -188,15 +187,13 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
             loss = style_score + content_score
             loss.backward()
             run[0] += 1
-            if run[0] % 10 == 0:
+            if run[0] % 1 == 0:
                 print("run {}:".format(run))
                 print('Style Loss : {:4f} Content Loss: {:4f}'.format(
                     style_score.item(), content_score.item()))
                 print()
-
             return style_score + content_score
         optimizer.step(closure)
-        exp_lr_scheduler.step()
     # a last correction...
     with torch.no_grad():
         input_img.clamp_(0, 1)
@@ -293,7 +290,7 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             # print(st_img.shape)
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
-                                        cont_img, st_img, input_img, num_steps=300)
+                                        cont_img, st_img, input_img, num_steps=60)
             return output
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
@@ -307,7 +304,7 @@ def start_message(message):
 @bot.message_handler(content_types=['text'])
 def send_text(message):
     if message.text.lower() == 'привет':
-        bot.send_message(message.chat.id, 'Привет!')
+        bot.send_message(message.chat.id, 'Йо!')
     elif message.text.lower() == 'пока':
         bot.send_message(message.chat.id, 'Пока :)')
 
