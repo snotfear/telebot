@@ -1,4 +1,9 @@
 from __future__ import print_function
+
+import sys
+import psutil
+import os
+
 import numpy as np
 import gc
 import telebot
@@ -188,7 +193,11 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
             loss = style_score + content_score
             loss.backward()
             run[0] += 1
-            if run[0] % 10 == 0:
+            if run[0] % 1 == 0:
+                pid = os.getpid()
+                python_process = psutil.Process(pid)
+                memoryUse = python_process.memory_info()[0] / 2. ** 30  # memory use in GB...I think
+                print('memory use:', memoryUse)
                 print("run {}:".format(run))
                 print('Style Loss : {:4f} Content Loss: {:4f}'.format(
                     style_score.item(), content_score.item()))
@@ -269,17 +278,12 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             st_img = image_loader(new_st_PIL)
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
-                                        cont_img, st_img, input_img, num_steps=59)
-            del cont_PIL
-            del style_PIL
-            del new_st_PIL
-            del new_cont_PIL
-            del cont_img
-            del st_img
+                                        cont_img, st_img, input_img, num_steps=19)
             return output
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
         return None
+
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -301,7 +305,13 @@ def get_image_message(message):
         outp = save_image_tensor2pillow(outp, 'out_image.jpg')
         bot.send_message(message.chat.id, "А вот и результат!")
         bot.send_photo(message.chat.id, outp)
-        gc.collect()
+        # gc.collect()
+        # print(sys.getsizeof(bot), 'bot')
+
+        pid = os.getpid()
+        python_process = psutil.Process(pid)
+        memoryUse = python_process.memory_info()[0] / 2. ** 30  # memory use in GB...I think
+        print('memory use:', memoryUse, 'память после выполнения работы')
     if len(pool_images[message.chat.id]) == 1:
         bot.send_message(message.chat.id, "Отлично, изображение с контентом получено, теперь жду изображение со стилем")
 
