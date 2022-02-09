@@ -24,7 +24,7 @@ bot = telebot.TeleBot(token)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 pool_images = dict()
 
-imsize = 256 #if torch.cuda.is_available() else 128  # use small size if no gpu
+imsize = 384 #if torch.cuda.is_available() else 128  # use small size if no gpu
 
 resizer = transforms.Resize(imsize)
 loader = transforms.ToTensor() # transform it into a torch tensor
@@ -277,7 +277,7 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             st_img = image_loader(new_st_PIL)
             input_img = cont_img.clone()
             output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
-                                        cont_img, st_img, input_img, num_steps=39)
+                                        cont_img, st_img, input_img, num_steps=59)
             return output
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
