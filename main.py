@@ -196,7 +196,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
             loss = style_score + content_score
             loss.backward()
             run[0] += 1
-            if run[0] % 1 == 0:
+            if run[0] % 10 == 0:
                 pid = os.getpid()
                 python_process = psutil.Process(pid)
                 memoryUse = python_process.memory_info()[0] / 2. ** 30  # memory use in GB...I think
@@ -205,6 +205,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
                 print('Style Loss : {:4f} Content Loss: {:4f}'.format(
                     style_score.item(), content_score.item()))
                 print()
+                gc.collect()
             return style_score + content_score
         optimizer.step(closure)
         gc.collect()
@@ -280,7 +281,7 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             st_img = image_loader(new_st_PIL)
             input_img = cont_img.clone()
             output = run_style_transfer(new_loaded_model, cnn_normalization_mean, cnn_normalization_std,
-                                        cont_img, st_img, input_img, num_steps=39)
+                                        cont_img, st_img, input_img, num_steps=59)
             return output
     else:
         pool_images[message_chat_id] = [photo_id] # Если Пользователь новый, то создаём пару чат - фото_контент
@@ -312,7 +313,7 @@ def get_image_message(message):
         python_process = psutil.Process(pid)
         memoryUse = python_process.memory_info()[0] / 2. ** 30  # memory use in GB...I think
         print('memory use:', memoryUse, 'память после выполнения работы')
-
+        gc.collect()
     if len(pool_images[message.chat.id]) == 1:
         bot.send_message(message.chat.id, "Отлично, изображение с контентом получено, теперь жду изображение со стилем")
 
