@@ -24,7 +24,7 @@ bot = telebot.TeleBot(token)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 pool_images = dict()
 
-imsize = 256 #if torch.cuda.is_available() else 128  # use small size if no gpu
+imsize = 512 #if torch.cuda.is_available() else 128  # use small size if no gpu
 
 resizer = transforms.Resize(imsize)
 loader = transforms.ToTensor() # transform it into a torch tensor
@@ -81,6 +81,8 @@ class StyleLoss(nn.Module):
         return input
 
 cnn = models.vgg19(pretrained=True).features.to(device).eval()
+torch.save(cnn[:11], 'my_new_model.pth')
+new_loaded_model = torch.load('my_new_model.pth')
 
 cnn_normalization_mean = torch.tensor([0.485, 0.456, 0.406]).to(device)
 cnn_normalization_std = torch.tensor([0.229, 0.224, 0.225]).to(device)
@@ -276,7 +278,7 @@ def get_image(message_chat_id, photo_id): # Работа с полученным
             cont_img = image_loader(new_cont_PIL)
             st_img = image_loader(new_st_PIL)
             input_img = cont_img.clone()
-            output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
+            output = run_style_transfer(new_loaded_model, cnn_normalization_mean, cnn_normalization_std,
                                         cont_img, st_img, input_img, num_steps=59)
             return output
     else:
